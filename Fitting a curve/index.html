@@ -1,0 +1,264 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <!-- Load TensorFlow.js -->
+    <script src="./js/tfjs"> </script>
+    <script src="./js/echarts-en.common.min.js"></script>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap-3.3.7.js"></script>
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <title>曲线拟合</title>
+    <script>
+        // Notice there is no 'import' statement. 'tf' is available on the index-page
+        // because of the script tag above.
+        const a = tf.variable(tf.scalar(Math.random()));
+        const b = tf.variable(tf.scalar(Math.random()));
+        const c = tf.variable(tf.scalar(Math.random()));
+        const d = tf.variable(tf.scalar(Math.random()));
+        function predict(x) {
+            // y = a * x ^ 3 + b * x ^ 2 + c * x + d
+            return tf.tidy(() => {
+                return a.mul(x.pow(tf.scalar(3))) // a * x^3
+                    .add(b.mul(x.square())) // + b * x ^ 2
+                    .add(c.mul(x)) // + c * x
+                    .add(d); // + d
+            });
+        }
+        function loss(predictions, labels) {
+            // 将labels（实际的值）进行抽象
+            // 然后获取平均数.
+            const meanSquareError = predictions.sub(labels).square().mean();
+            return meanSquareError;
+        }
+
+        function train(xs, ys, numIterations = 75) {
+
+            const learningRate = 0.5;
+            const optimizer = tf.train.sgd(learningRate);
+
+            for (let iter = 0; iter < numIterations; iter++) {
+                optimizer.minimize(() => {
+                    const predsYs = predict(xs);
+                    return loss(predsYs, ys);
+                });
+            }
+        }
+
+        function main() {
+            train(tf.tensor1d(xss), tf.tensor1d(yss), 75);
+            myDraw();
+        }
+    </script>
+    <!-- generate date -->
+    <script>
+        var va = -0.8, vb = -0.2, vc = 0.9, vd = 0.5;
+
+        function f(k) {
+            return va * k * k * k + vb * k * k + vc * k + vd;
+        }
+
+        function setAgrs() {
+            va = new Number($('#a').val()), vb = new Number($('#b').val()), vc = new Number($('#c').val()), vd = new Number($('#d').val());
+            generate()
+            myDraw();
+        }
+
+        raw_data = [];
+        xss = [];
+        yss = [];
+        right_data = [];
+
+        function f1(k) {
+            return tf2num(a) * k * k * k + tf2num(b) * k * k + tf2num(c) * k + tf2num(d);
+        }
+
+        function tf2num(tfs) {
+            var s = tfs.toLocaleString();
+            return new Number(s.replace("Tensor", "").trim());
+        }
+    </script>
+
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="col-8 offset-2">
+            <div id="main" style="height:500px;"></div>
+        </div>
+
+        <div class="col-8 offset-2">
+            <div class="alert alert-success" role="alert">
+                曲线: y = a * x ^ 3 + b * x ^ 2 + c * x + d
+            </div>
+            <div class="alert alert-success" role="alert" id="ans">
+                This is a primary alert—check it out!
+            </div>
+            <div class="alert alert-primary" role="alert" id="alert">
+                This is a primary alert—check it out!
+            </div>
+            <div class="form-row">
+                <div class="input-group mb-3 col-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">a</span>
+                    </div>
+                    <input type="text" class="form-control" id="a" placeholder="a" aria-label="a" aria-describedby="basic-addon1"
+                        value="-0.800">
+                </div>
+                <div class="input-group mb-3 col-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon2">b</span>
+                    </div>
+                    <input type="text" class="form-control" id="b" placeholder="b" aria-label="b" aria-describedby="basic-addon2"
+                        value="-0.200">
+                </div>
+                <div class="input-group mb-3 col-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon3">c</span>
+                    </div>
+                    <input type="text" class="form-control" id="c" placeholder="c" aria-label="c" aria-describedby="basic-addon3"
+                        value="0.900">
+                </div>
+                <div class="input-group mb-3 col-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon4">d</span>
+                    </div>
+                    <input type="text" class="form-control" id="d" placeholder="d" aria-label="d" aria-describedby="basic-addon4"
+                        value="0.500">
+                </div>
+            </div><button type="button" class="btn btn-outline-primary mb-3 col-6" onclick="setAgrs()">设置</button><button
+                type="button" class="btn btn-outline-info mb-3 col-6" onclick="main()">迭代</button>
+        </div>
+    </div>
+</body>
+
+<script>
+
+    function generate() {
+        xss = [], yss = [], raw_data = [], right_data = [];
+        // generate the data
+        for (var i = -100; i < 101; i = i + (Math.random() * 10)) {
+            xi = i / 100;
+            yi = f(xi + (Math.random() - 0.5) / 10).toFixed(3);
+            xss.push(xi);
+            yss.push(yi);
+            raw_data.push([xi, yi]);
+        }
+        for (var i = -100; i < 101; i++) {
+            right_data.push([i / 100, f(i / 100).toFixed(3)]);
+        }
+
+    }
+
+    function myDraw() {
+        // draw the random curve
+        test_data = [];
+        for (var i = -100; i < 101; i++) {
+            test_data.push([i / 100, f1(i / 100).toFixed(3)]);
+        }
+        // ues the dom we creating fore charts
+        var myChart = echarts.init(document.getElementById('main'));
+        option = {
+            title: {
+                text: '曲线拟合'
+            }, legend: {
+                data: ['散点', '答案', '预测']
+            }, toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            dataZoom: [
+                {
+                    type: 'slider',
+                    show: true,
+                    xAxisIndex: [0]
+                },
+                {
+                    type: 'slider',
+                    show: true,
+                    yAxisIndex: [0]
+                },
+                {
+                    type: 'inside',
+                    xAxisIndex: [0]
+                },
+                {
+                    type: 'inside',
+                    yAxisIndex: [0]
+                }
+            ],
+            xAxis: {
+                name: 'x',
+                type: 'value',
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed'
+                    }
+                },
+                splitNumber: 20
+            },
+            yAxis: {
+                name: 'y',
+                type: 'value',
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed'
+                    }
+                }
+            },
+            series: [{
+                name: '散点',
+                symbolSize: 10,
+                data: raw_data,
+                label: {
+                    emphasis: {
+                        show: true,
+                        position: 'right',
+                        textStyle: {
+                            color: 'blue',
+                            fontSize: 12
+                        }
+                    }
+                },
+                type: 'scatter'
+            }, {
+                name: '答案',
+                showSymbol: false,
+                data: right_data,
+                type: 'line',
+                smooth: false//,
+                // lineStyle: {
+                //     normal: {
+                //         color: 'green',
+                //         width: 3
+                //     }
+                // }
+            }, {
+                name: '预测',
+                showSymbol: false,
+                data: test_data,
+                type: 'line',
+                smooth: false//,
+                // lineStyle: {
+                //     normal: {
+                //         color: 'blue',
+                //         width: 3
+                //     }
+                // }
+            }
+            ]
+        };
+
+        // set the option to the dom
+        myChart.setOption(option);
+        $('#ans').text('答案: y= ' + va.toFixed(3) + '*x^3 + ' + vb.toFixed(3) + '*x^2 + ' + vc.toFixed(3) + '*x + ' + vd.toFixed(3));
+        $('#alert').text('预测: y = ' + tf2num(a).toFixed(3) + '*x^3 + ' + tf2num(b).toFixed(3) + '*x^2 + ' + tf2num(c).toFixed(3) + '*x + ' + tf2num(d).toFixed(3));
+    }
+    generate();
+    myDraw();
+
+</script>
+
+</html>
